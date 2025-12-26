@@ -5,8 +5,9 @@ import Home from './pages/Home';
 import Chat from './pages/Chat';
 import CheckIn from './pages/CheckIn';
 import SOS from './pages/SOS';
-// 🌟 1. IMPORT THE NEW FEEDBACK PAGE
 import Feedback from './pages/Feedback'; 
+// 🌟 1. IMPORT QUIZ
+import Quiz from './pages/Quiz';
 
 const App = () => {
   return (
@@ -21,10 +22,10 @@ const App = () => {
               <Route path="/chat" element={<Chat />} />
               <Route path="/checkin" element={<CheckIn />} />
               <Route path="/sos" element={<SOS />} />
-              
-              {/* 🌟 2. THIS IS THE MISSING PIECE! */}
-              {/* This tells the app: "When URL is /feedback, show the Feedback page" */}
               <Route path="/feedback" element={<Feedback />} />
+              
+              {/* 🌟 2. ADD QUIZ ROUTE */}
+              <Route path="/quiz" element={<Quiz />} />
               
             </Routes>
           </div>
