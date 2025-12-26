@@ -1,7 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* GLOBAL RESET & SMOOTHNESS */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  @apply bg-neuro-bg text-neuro-primary;
+  background-color: #F0FDFA; /* Matches neuro-bg */
+  color: #0D9488; /* Matches neuro-primary */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* CUSTOM SCROLLBAR (Teal Themed) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CCFBF1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #14B8A6;
+}
+
+/* GLASS EFFECT UTILITY */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ANIMATIONS */
+.animate-enter {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
