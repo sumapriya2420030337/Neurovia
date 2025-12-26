@@ -13,3 +13,8 @@ Rules Summary:
 
 Rationale:
 These rules prevent data misuse and ensure privacy-first design.
+## Status
+
+Firestore rules are live in production mode.
+Only anonymous writes are allowed.
+Raw user data is never readable or stored.
