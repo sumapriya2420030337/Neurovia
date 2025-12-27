@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { BookOpen, Users, Heart, DollarSign, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { logCheckIn, startSession } from '../firebase/firebaseLog';
 
-// 🌟 IMPORT ALL 5 MOOD IMAGES
+// mood images
 import greatImg from '../assets/mood-great.jpeg';
 import happyImg from '../assets/mood-happy.jpeg';
 import calmImg from '../assets/mood-calm.jpeg';
@@ -10,18 +11,17 @@ import tiredImg from '../assets/mood-tired.jpeg';
 import distressedImg from '../assets/mood-distressed.jpeg';
 
 const CheckIn = () => {
-  const [selectedMood, setSelectedMood] = useState(null);
-  const [category, setCategory] = useState(null);
-
   const navigate = useNavigate();
+  const [selectedMood, setSelectedMood] = useState('');
+  const [category, setCategory] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // 🌟 5 MOODS CONFIGURATION
   const moods = [
-    { img: greatImg, label: "Great", val: "low" },
-    { img: happyImg, label: "Happy", val: "low" },
-    { img: calmImg, label: "Calm", val: "moderate" },
-    { img: tiredImg, label: "Tired", val: "moderate" },
-    { img: distressedImg, label: "Distressed", val: "high" },
+    { img: greatImg, label: 'Great' },
+    { img: happyImg, label: 'Happy' },
+    { img: calmImg, label: 'Calm' },
+    { img: tiredImg, label: 'Tired' },
+    { img: distressedImg, label: 'Distressed' },
   ];
 
   const categories = [
@@ -31,109 +31,131 @@ const CheckIn = () => {
     { id: 'Financial', label: 'Financial', icon: DollarSign },
   ];
 
-  const startChat = () => {
-    if (!selectedMood || !category) return;
+  const startChat = async () => {
+    if (!selectedMood || !category || loading) return;
 
-    navigate('/chat', {
-      state: {
+    setLoading(true);
+
+    try {
+      console.log('🧠 Logging check-in...');
+      await logCheckIn({
         emotion: selectedMood,
-        cause: category,
-        fromCheckIn: true, // 🔥 important for Chat logic
-      },
-    });
+        category,
+      });
+
+      console.log('🟢 Starting session...');
+      await startSession();
+
+      console.log('➡️ Redirecting to chat');
+
+      navigate('/chat', {
+        state: {
+          emotion: selectedMood,
+          cause: category,
+          fromCheckIn: true,
+        },
+      });
+    } catch (err) {
+      console.error('❌ Check-in flow failed:', err);
+
+      // 🔥 IMPORTANT: still redirect even if logging fails
+      navigate('/chat', {
+        state: {
+          emotion: selectedMood,
+          cause: category,
+          fromCheckIn: true,
+        },
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 text-center pt-8 px-4 pb-12 animate-fadeIn">
-      <div className="space-y-2">
+    <div className="max-w-2xl mx-auto px-4 pt-10 pb-14 text-center space-y-10 animate-fadeIn">
+
+      {/* HEADER */}
+      <div>
         <h1 className="text-3xl font-bold text-neuro-primary font-display">
-          Daily Check-In
+          Daily Check‑In
         </h1>
-        <p className="text-neuro-secondary">How are you feeling right now?</p>
+        <p className="text-neuro-secondary mt-1">
+          How are you feeling right now?
+        </p>
       </div>
 
-      {/* Mood Selector */}
+      {/* MOODS */}
       <div className="flex flex-wrap justify-center gap-4">
-        {moods.map((m, i) => (
+        {moods.map((mood) => (
           <button
-            key={i}
-            onClick={() => setSelectedMood(m.label)}
-            className={`flex flex-col items-center gap-2 p-3 rounded-3xl transition-all duration-300 w-24 md:w-28 group
+            key={mood.label}
+            onClick={() => {
+              setSelectedMood(mood.label);
+              setCategory('');
+            }}
+            className={`w-24 md:w-28 p-3 rounded-3xl flex flex-col items-center gap-2 transition-all duration-300
               ${
-                selectedMood === m.label
-                  ? 'bg-white shadow-xl scale-110 border-2 border-neuro-accent'
-                  : 'bg-white/50 hover:bg-white hover:shadow-md border-2 border-transparent'
-              }`}
+                selectedMood === mood.label
+                  ? 'bg-white border-2 border-neuro-accent shadow-lg scale-105'
+                  : 'bg-white/60 border-2 border-transparent hover:bg-white hover:shadow-md'
+              }
+            `}
           >
-            <img
-              src={m.img}
-              alt={m.label}
-              className={`w-14 h-14 md:w-16 md:h-16 object-contain transition-transform duration-300 ${
-                selectedMood === m.label ? 'scale-110' : 'group-hover:scale-110'
-              }`}
-            />
-            <span
-              className={`text-sm font-semibold transition-colors ${
-                selectedMood === m.label
-                  ? 'text-neuro-primary'
-                  : 'text-neuro-secondary'
-              }`}
-            >
-              {m.label}
-            </span>
+            <img src={mood.img} alt={mood.label} className="w-14 h-14 object-contain" />
+            <span className="text-sm font-semibold">{mood.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Category Selector */}
+      {/* CATEGORIES */}
       {selectedMood && (
-        <div className="animate-slideUp space-y-4">
-          <p className="text-neuro-primary font-medium text-lg">
-            What's on your mind?
+        <div className="space-y-5 animate-slideUp">
+          <p className="text-lg font-medium text-neuro-primary">
+            What’s on your mind?
           </p>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all duration-200 font-medium
-                  ${
-                    category === cat.id
-                      ? 'bg-neuro-accent text-white shadow-md scale-105'
-                      : 'bg-white border-2 border-neuro-bg text-neuro-secondary hover:border-neuro-accent/30 hover:bg-neuro-bg'
-                  }`}
-              >
-                <cat.icon size={24} />
-                <span>{cat.label}</span>
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategory(cat.id)}
+                  className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-medium transition-all
+                    ${
+                      category === cat.id
+                        ? 'bg-neuro-accent text-white shadow-md scale-105'
+                        : 'bg-white border-2 border-neuro-bg text-neuro-secondary hover:border-neuro-accent/40'
+                    }
+                  `}
+                >
+                  <Icon size={22} />
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* 🌟 START CHAT */}
+      {/* START CHAT */}
       <div
-        className={`pt-8 transition-all duration-500 flex justify-center ${
-          selectedMood && category
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-10 pointer-events-none'
-        }`}
+        className={`pt-8 flex justify-center transition-all duration-500
+          ${selectedMood && category ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+        `}
       >
         <button
           onClick={startChat}
-          className="group flex flex-col items-center gap-4 relative"
+          disabled={loading}
+          className="group flex flex-col items-center gap-4"
         >
-          <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-full border-4 border-white shadow-2xl overflow-hidden group-hover:scale-105 transition-all duration-300 ring-4 ring-neuro-bg group-hover:ring-neuro-accent/30">
-            <img
-              src="/images/chat-boy.jpeg"
-              alt="Chat with NIA"
-              className="w-full h-full object-cover"
-            />
+          <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-white shadow-2xl">
+            <img src="/images/chat-boy.jpeg" alt="Chat" className="w-full h-full object-cover" />
           </div>
 
-          <span className="bg-neuro-primary text-white text-lg font-bold px-8 py-3 rounded-full shadow-lg group-hover:bg-neuro-accent transition-all duration-300 flex items-center gap-2">
+          <span className="bg-neuro-primary text-white px-8 py-3 rounded-full font-bold flex items-center gap-2">
             <MessageCircle size={20} />
-            Chat with NIA
+            {loading ? 'Starting...' : 'Chat with NIA'}
           </span>
         </button>
       </div>
