@@ -1,17 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, User, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import SOSPanel from '../components/SOSPanel';
 
 const Chat = () => {
+  const location = useLocation();
+  const hasInjectedRef = useRef(false);
+
+  const emotion = location.state?.emotion;
+  const cause = location.state?.cause;
+
   const [messages, setMessages] = useState([
     {
       id: 1,
       text: "Hi there! I'm here to listen. No judgment, just a safe space. How are things?",
-      sender: 'bot',
+      sender: 'assistant',
       time: 'Now',
     },
   ]);
+
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [severity, setSeverity] = useState('low');
@@ -22,6 +29,71 @@ const Chat = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // 🔥 AUTO PREFILL WHEN COMING FROM CHECK-IN
+  useEffect(() => {
+    if (!emotion || !cause) return;
+    if (hasInjectedRef.current) return;
+
+    hasInjectedRef.current = true;
+
+    const introMessage = `I'm feeling ${emotion.toLowerCase()} right now. What's been on my mind is ${cause.toLowerCase()}.`;
+
+    const timeNow = new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const userMsg = {
+      id: Date.now(),
+      text: introMessage,
+      sender: 'user',
+      time: timeNow,
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsTyping(true);
+
+    fetch('http://localhost:5000/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ sender: 'user', text: introMessage }],
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.triggerSOS) {
+          setSeverity('crisis');
+          return;
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            text: data.reply,
+            sender: 'assistant',
+            time: new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+          },
+        ]);
+      })
+      .catch(() => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            text: 'Connection error.',
+            sender: 'assistant',
+            time: timeNow,
+          },
+        ]);
+      })
+      .finally(() => setIsTyping(false));
+  }, [emotion, cause]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -57,7 +129,6 @@ const Chat = () => {
 
       const data = await res.json();
 
-      // 🚨 SOS trigger from backend
       if (data.triggerSOS) {
         setSeverity('crisis');
         return;
@@ -68,20 +139,21 @@ const Chat = () => {
         {
           id: Date.now() + 1,
           text: data.reply,
-          sender: 'bot',
+          sender: 'assistant',
           time: new Date().toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
           }),
         },
       ]);
-    } catch {
+    } catch (err) {
+      console.error('Chat API error:', err);
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now(),
           text: 'Connection error.',
-          sender: 'bot',
+          sender: 'assistant',
           time: timeNow,
         },
       ]);
@@ -137,7 +209,7 @@ const Chat = () => {
               msg.sender === 'user' ? 'justify-end' : 'justify-start'
             } animate-slideUp`}
           >
-            {msg.sender === 'bot' && (
+            {msg.sender === 'assistant' && (
               <div className="w-10 h-10 rounded-full border border-slate-200 overflow-hidden mr-3 mt-1 shadow-sm bg-white">
                 <img
                   src="/images/chat-boy.jpeg"
