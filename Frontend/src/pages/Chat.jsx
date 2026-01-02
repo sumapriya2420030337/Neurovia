@@ -31,7 +31,7 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Auto‑prefill once (from check‑in)
+  // Auto‑prefill from check‑in (once)
   useEffect(() => {
     if (injectedRef.current || !emotion || !cause) return;
     injectedRef.current = true;
@@ -102,14 +102,27 @@ const Chat = () => {
 
       {/* Header */}
       <div className="p-4 px-6 border-b flex justify-between items-center bg-white">
-        <div>
-          <h2 className="font-bold text-lg">
-            NIA{" "}
-            <span className="text-sm font-medium text-slate-500">
-              (Neurovia Companion)
-            </span>
-          </h2>
-          <p className="text-xs text-slate-500">Your AI Mental Health Companion</p>
+        <div className="flex items-center gap-3">
+          {/* NIA Avatar */}
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
+            <img
+              src="/images/chat-boy.jpeg"
+              alt="NIA"
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          <div>
+            <h2 className="font-bold text-lg">
+              NIA{" "}
+              <span className="text-sm font-medium text-slate-500">
+                (Neurovia Companion)
+              </span>
+            </h2>
+            <p className="text-xs text-slate-500">
+              Your AI Mental Health Companion
+            </p>
+          </div>
         </div>
 
         <Link
@@ -126,10 +139,21 @@ const Chat = () => {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${
+            className={`flex items-start gap-3 ${
               msg.sender === "user" ? "justify-end" : "justify-start"
             }`}
           >
+            {/* NIA avatar */}
+            {msg.sender === "assistant" && (
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 mt-1">
+                <img
+                  src="/images/chat-boy.jpeg"
+                  alt="NIA"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
             <div className="flex flex-col max-w-[70%]">
               <div
                 className={`p-4 rounded-2xl text-sm ${
@@ -141,7 +165,6 @@ const Chat = () => {
                 {msg.text}
               </div>
 
-              {/* NIA label */}
               {msg.sender === "assistant" && (
                 <span className="text-[10px] text-neuro-accent font-semibold mt-1 ml-1">
                   NIA
@@ -151,8 +174,22 @@ const Chat = () => {
           </div>
         ))}
 
+        {/* Typing indicator */}
         {isTyping && (
-          <div className="text-xs text-slate-400 ml-2">NIA is typing…</div>
+          <div className="flex items-center gap-2 text-slate-400 text-xs">
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200">
+              <img
+                src="/images/chat-boy.jpeg"
+                alt="NIA"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="flex gap-1">
+              <span className="animate-bounce">•</span>
+              <span className="animate-bounce delay-100">•</span>
+              <span className="animate-bounce delay-200">•</span>
+            </span>
+          </div>
         )}
 
         <div ref={messagesEndRef} />
