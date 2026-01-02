@@ -4,8 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import SOSPanel from "../components/SOSPanel";
 
 // ✅ Import avatar from assets (IMPORTANT for Vite)
-import niaAvatar from "../assets/mood-great.jpeg";
-
+import niaAvatar from "../images/chat-boy.jpeg";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Chat = () => {
