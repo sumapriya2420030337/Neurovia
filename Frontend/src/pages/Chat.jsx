@@ -3,6 +3,9 @@ import { Send, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import SOSPanel from "../components/SOSPanel";
 
+// ✅ Import avatar from assets (IMPORTANT for Vite)
+import niaAvatar from "../assets/chat-boy.jpeg";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Chat = () => {
@@ -26,12 +29,16 @@ const Chat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [severity, setSeverity] = useState("low");
 
-  // Auto scroll
+  /* ======================
+     Auto scroll
+  ====================== */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Auto‑prefill from check‑in (once)
+  /* ======================
+     Auto‑prefill (once)
+  ====================== */
   useEffect(() => {
     if (injectedRef.current || !emotion || !cause) return;
     injectedRef.current = true;
@@ -40,6 +47,9 @@ const Chat = () => {
     sendMessage(intro);
   }, [emotion, cause]);
 
+  /* ======================
+     Send message
+  ====================== */
   const sendMessage = async (text) => {
     const timeNow = new Date().toLocaleTimeString([], {
       hour: "2-digit",
@@ -96,21 +106,21 @@ const Chat = () => {
     setInput("");
   };
 
+  /* ======================
+     UI
+  ====================== */
   return (
     <div className="relative flex flex-col h-[85vh] bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
       {severity === "crisis" && <SOSPanel />}
 
-      {/* Header */}
+      {/* ===== Header ===== */}
       <div className="p-4 px-6 border-b flex justify-between items-center bg-white">
         <div className="flex items-center gap-3">
-          {/* NIA Avatar */}
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
-            <img
-              src="/images/chat-boy.jpeg"
-              alt="NIA"
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <img
+            src={niaAvatar}
+            alt="NIA"
+            className="w-10 h-10 rounded-full object-cover border"
+          />
 
           <div>
             <h2 className="font-bold text-lg">
@@ -134,7 +144,7 @@ const Chat = () => {
         </Link>
       </div>
 
-      {/* Messages */}
+      {/* ===== Messages ===== */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#F8FAFC]">
         {messages.map((msg) => (
           <div
@@ -145,13 +155,11 @@ const Chat = () => {
           >
             {/* NIA avatar */}
             {msg.sender === "assistant" && (
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 mt-1">
-                <img
-                  src="/images/chat-boy.jpeg"
-                  alt="NIA"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <img
+                src={niaAvatar}
+                alt="NIA"
+                className="w-8 h-8 rounded-full object-cover border mt-1"
+              />
             )}
 
             <div className="flex flex-col max-w-[70%]">
@@ -174,20 +182,18 @@ const Chat = () => {
           </div>
         ))}
 
-        {/* Typing indicator */}
+        {/* ===== Typing Indicator (REAL, no lag) ===== */}
         {isTyping && (
           <div className="flex items-center gap-2 text-slate-400 text-xs">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200">
-              <img
-                src="/images/chat-boy.jpeg"
-                alt="NIA"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <img
+              src={niaAvatar}
+              alt="NIA"
+              className="w-8 h-8 rounded-full object-cover border"
+            />
             <span className="flex gap-1">
               <span className="animate-bounce">•</span>
-              <span className="animate-bounce delay-100">•</span>
-              <span className="animate-bounce delay-200">•</span>
+              <span className="animate-bounce [animation-delay:0.15s]">•</span>
+              <span className="animate-bounce [animation-delay:0.3s]">•</span>
             </span>
           </div>
         )}
@@ -195,7 +201,7 @@ const Chat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* ===== Input ===== */}
       <div className="p-4 border-t bg-white">
         <div className="flex gap-3 items-center bg-slate-50 p-2 rounded-2xl border border-slate-200">
           <input
