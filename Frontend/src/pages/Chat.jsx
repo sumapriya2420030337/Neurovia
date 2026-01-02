@@ -1,176 +1,87 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Shield } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import SOSPanel from '../components/SOSPanel';
+import React, { useState, useEffect, useRef } from "react";
+import { Send, User, Shield } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import SOSPanel from "../components/SOSPanel";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Chat = () => {
   const location = useLocation();
-  const hasInjectedRef = useRef(false);
+  const injectedRef = useRef(false);
+  const messagesEndRef = useRef(null);
 
-  // 🔹 CONTEXT SOURCES
   const emotion = location.state?.emotion;
   const cause = location.state?.cause;
-
-  const quizResult = location.state?.quizResult;
-  const riskLevel = location.state?.riskLevel;
-  const scores = location.state?.scores;
 
   const [messages, setMessages] = useState([
     {
       id: 1,
       text: "Hi there! I'm here to listen. No judgment, just a safe space. How are things?",
-      sender: 'assistant',
-      time: 'Now',
+      sender: "assistant",
+      time: "Now",
     },
   ]);
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [severity, setSeverity] = useState('low');
+  const [severity, setSeverity] = useState("low");
 
-  const messagesEndRef = useRef(null);
-
-  // 🔄 Auto-scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // 🔥 AUTO‑PREFILL FROM CHECK‑IN OR QUIZ (ONCE)
+  // Auto‑prefill (once)
   useEffect(() => {
-    if (hasInjectedRef.current) return;
+    if (injectedRef.current || !emotion || !cause) return;
 
-    let introMessage = null;
+    injectedRef.current = true;
 
-    // ✅ FROM CHECK‑IN
-    if (emotion && cause) {
-      introMessage = `I'm feeling ${emotion.toLowerCase()} right now. What's been on my mind is ${cause.toLowerCase()}.`;
-    }
+    const intro = `I'm feeling ${emotion.toLowerCase()} because ${cause.toLowerCase()}.`;
+    sendMessage(intro);
+  }, [emotion, cause]);
 
-    // ✅ FROM QUIZ
-    if (quizResult && riskLevel && scores) {
-      introMessage = `I just completed a wellness quiz. My overall risk level was ${riskLevel}. I'd like to talk about how I'm feeling.`;
-      if (riskLevel === 'high') setSeverity('crisis');
-    }
-
-    if (!introMessage) return;
-
-    hasInjectedRef.current = true;
-
+  const sendMessage = async (text) => {
     const timeNow = new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
-    const userMsg = {
-      id: Date.now(),
-      text: introMessage,
-      sender: 'user',
-      time: timeNow,
-    };
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), text, sender: "user", time: timeNow },
+    ]);
 
-    setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-
-    fetch('http://localhost:5000/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ sender: 'user', text: introMessage }],
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.triggerSOS) {
-          setSeverity('crisis');
-          return;
-        }
-
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 1,
-            text: data.reply,
-            sender: 'assistant',
-            time: new Date().toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-          },
-        ]);
-      })
-      .catch(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            text: 'Connection error.',
-            sender: 'assistant',
-            time: timeNow,
-          },
-        ]);
-      })
-      .finally(() => setIsTyping(false));
-  }, [emotion, cause, quizResult, riskLevel, scores]);
-
-  // ✉️ MANUAL SEND
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const timeNow = new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    const userMsg = {
-      id: Date.now(),
-      text: input,
-      sender: 'user',
-      time: timeNow,
-    };
-
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-    setInput('');
     setIsTyping(true);
 
     try {
-      const res = await fetch('http://localhost:5000/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API_URL}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: updatedMessages.map((m) => ({
-            sender: m.sender,
-            text: m.text,
-          })),
+          messages: [{ role: "user", content: text }],
         }),
       });
 
       const data = await res.json();
 
-      if (data.triggerSOS) {
-        setSeverity('crisis');
-        return;
-      }
+      if (data.triggerSOS) setSeverity("crisis");
 
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           text: data.reply,
-          sender: 'assistant',
-          time: new Date().toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
+          sender: "assistant",
+          time: timeNow,
         },
       ]);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now(),
-          text: 'Connection error.',
-          sender: 'assistant',
+          text: "Connection error.",
+          sender: "assistant",
           time: timeNow,
         },
       ]);
@@ -179,95 +90,50 @@ const Chat = () => {
     }
   };
 
+  const handleSend = () => {
+    if (!input.trim()) return;
+    sendMessage(input);
+    setInput("");
+  };
+
   return (
-    <div className="relative flex flex-col h-[85vh] bg-neuro-bg rounded-3xl shadow-xl overflow-hidden border border-slate-200">
-      {/* 🚨 CRISIS OVERRIDE */}
-      {severity === 'crisis' && <SOSPanel />}
+    <div className="relative flex flex-col h-[85vh] bg-white rounded-3xl shadow-xl overflow-hidden">
+      {severity === "crisis" && <SOSPanel />}
 
       {/* Header */}
-      <div className="bg-white p-4 px-6 border-b border-slate-100 flex justify-between items-center shadow-sm z-10">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full border-2 border-neuro-accent p-0.5 shadow-sm overflow-hidden">
-              <img src="/images/chat-boy.jpeg" alt="Companion" className="w-full h-full object-cover" />
-            </div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse"></div>
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-800 text-lg font-display">Neurovia Companion</h2>
-            <p className="text-xs text-slate-500 font-medium">Always here for you</p>
-          </div>
-        </div>
-
-        <Link to="/sos" className="flex items-center gap-2 text-neuro-danger bg-red-50 hover:bg-red-100 px-4 py-2 rounded-full transition-all text-sm font-bold border border-red-100">
-          <Shield size={16} />
-          <span>Emergency</span>
+      <div className="p-4 border-b flex justify-between items-center">
+        <h2 className="font-bold">Neurovia Companion</h2>
+        <Link to="/sos" className="text-red-600 flex items-center gap-1">
+          <Shield size={16} /> Emergency
         </Link>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#F8FAFC]">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex w-full ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-slideUp`}>
-            {msg.sender === 'assistant' && (
-              <div className="w-10 h-10 rounded-full border border-slate-200 overflow-hidden mr-3 mt-1 shadow-sm bg-white">
-                <img src="/images/chat-boy.jpeg" alt="Bot" className="w-full h-full object-cover" />
-              </div>
-            )}
-
-            <div className={`max-w-[75%] flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${
-                msg.sender === 'user'
-                  ? 'bg-neuro-accent text-white rounded-tr-none'
-                  : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
-              }`}>
-                {msg.text}
-              </div>
-              <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.time}</span>
+          <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`p-3 rounded-xl max-w-[70%] ${
+              msg.sender === "user" ? "bg-green-500 text-white" : "bg-gray-100"
+            }`}>
+              {msg.text}
             </div>
-
-            {msg.sender === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-neuro-light flex items-center justify-center text-neuro-primary ml-3 mt-1">
-                <User size={16} />
-              </div>
-            )}
           </div>
         ))}
-
-        {isTyping && (
-          <div className="flex justify-start animate-pulse pl-14">
-            <div className="bg-slate-200 px-4 py-2 rounded-full text-xs text-slate-500 font-medium">
-              typing...
-            </div>
-          </div>
-        )}
-
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-white border-t border-slate-100">
-        <div className="flex gap-3 items-center bg-slate-50 p-2 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-neuro-accent/20 transition-all">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Type your message..."
-            disabled={severity === 'crisis'}
-            className="flex-1 bg-transparent p-2 focus:outline-none text-slate-700 placeholder-slate-400 ml-2"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || severity === 'crisis'}
-            className="bg-neuro-accent text-white p-3 rounded-xl hover:bg-neuro-primary disabled:opacity-50 shadow-md transition-all"
-          >
-            <Send size={20} />
-          </button>
-        </div>
-        <p className="text-center text-[10px] text-slate-400 mt-2">
-          Messages are analyzed for safety but never stored with your identity.
-        </p>
+      <div className="p-4 border-t flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          className="flex-1 border rounded-xl p-3"
+          placeholder="Type your message..."
+        />
+        <button onClick={handleSend} className="bg-green-500 text-white p-3 rounded-xl">
+          <Send size={18} />
+        </button>
       </div>
     </div>
   );

@@ -8,9 +8,12 @@ const groq = new Groq({
 });
 
 export async function generateChatResponse(messages) {
-  const lastMessage = messages[messages.length - 1]?.text || "";
+  // Normalize last user message safely
+  const last = messages[messages.length - 1];
+  const lastMessage =
+    last?.text || last?.content || "";
 
-  // Crisis detection (safe)
+  // Crisis detection (safe + minimal)
   const crisisWords = [
     "kill myself",
     "suicide",
@@ -27,17 +30,18 @@ export async function generateChatResponse(messages) {
   }
 
   const completion = await groq.chat.completions.create({
-    // 🔥 CURRENT SUPPORTED MODEL
     model: "llama-3.1-8b-instant",
     messages: [
       {
         role: "system",
         content:
-          "You are NIA, a warm, empathetic mental-health support companion for college students.",
+          "You are NIA, a warm and empathetic mental-health companion for college students. " +
+          "Keep responses supportive, calm, and concise (3–5 sentences max). " +
+          "Ask only one gentle follow-up question.",
       },
       ...messages.map(m => ({
-        role: m.sender === "user" ? "user" : "assistant",
-        content: m.text,
+        role: m.role || (m.sender === "user" ? "user" : "assistant"),
+        content: m.content || m.text,
       })),
     ],
   });
