@@ -50,9 +50,12 @@ app.post("/chat", async (req, res) => {
 });
 
 /* ===============================
-   Feedback Route (NEW)
+   Feedback Route
 =============================== */
 app.post("/feedback", async (req, res) => {
+  // 🔴 TEMP DEBUG LOG (ONLY ADDITION)
+  console.log("📩 FEEDBACK BODY RECEIVED:", req.body);
+
   try {
     const { name, email, message } = req.body;
 
