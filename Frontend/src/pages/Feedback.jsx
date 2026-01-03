@@ -35,7 +35,7 @@ const Feedback = () => {
 
       // Hide success after 3 seconds
       setTimeout(() => setSubmitted(false), 3000);
-    } catch (err) {
+    } catch  {
       alert("Failed to send feedback. Please try again.");
     } finally {
       setLoading(false);
