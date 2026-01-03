@@ -102,7 +102,7 @@ const Home = () => {
 
       {/* HERO */}
       <div className="text-center space-y-4 max-w-2xl mt-8 mb-12">
-        <h1 className="text-5xl font-bold text-neuro-primary">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neuro-primary">
           Welcome to <span className="text-neuro-accent">Neurovia</span>
         </h1>
         <p className="text-xl text-slate-500">
