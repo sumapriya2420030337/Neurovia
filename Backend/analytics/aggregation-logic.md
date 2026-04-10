@@ -13,6 +13,6 @@ Metrics Generated:
 How It Works:
 - Firestore queries aggregate counts
 - No raw chat or text is processed
-- Data is displayed as numbers and charts only
+- Data is displayed as numbers and charts only 
 
 This ensures ethical data usage.
