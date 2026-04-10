@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: "neurovia-project",
   storageBucket: "neurovia-project.appspot.com",
   messagingSenderId: "00000000000",
-  appId: "1:00000000000:web:000000000000"
+  appId: "1:00000000000:web:000000000000" 
 };
 
 // 2. INITIALIZE APP
